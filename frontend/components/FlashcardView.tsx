@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { RotateCw, ChevronLeft, ChevronRight, Sparkles, AlertCircle } from "lucide-react";
 
 type Flashcard = {
   question: string;
@@ -54,110 +58,161 @@ export default function FlashcardView({ sessionId }: { sessionId?: number }) {
 
   if (flashcards.length === 0) {
     return (
-      <div className="bg-white rounded-xl p-8 shadow-sm">
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🎴</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">AI Flashcards</h2>
-          <p className="text-gray-600 mb-6">
-            Generate flashcards from your uploaded documents to help you study and memorize key concepts.
+      <Card className="border-2">
+        <CardContent className="flex flex-col items-center justify-center py-16 px-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-lg">
+            🎴
+          </div>
+          <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            AI Flashcards
+          </h2>
+          <p className="text-muted-foreground text-center mb-6 max-w-md">
+            Generate intelligent flashcards from your uploaded documents to help you study and memorize key concepts.
           </p>
           {error && (
-            <p className="text-red-600 mb-4 text-sm">{error}</p>
+            <div className="flex items-center gap-2 text-destructive mb-4 bg-destructive/10 px-4 py-2 rounded-lg">
+              <AlertCircle className="h-4 w-4" />
+              <p className="text-sm">{error}</p>
+            </div>
           )}
-          <button
+          <Button
             onClick={generateFlashcards}
             disabled={generating}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+            size="lg"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
           >
-            {generating ? '⏳ Generating Flashcards...' : '✨ Generate Flashcards'}
-          </button>
-        </div>
-      </div>
+            {generating ? (
+              <>
+                <RotateCw className="mr-2 h-5 w-5 animate-spin" />
+                Generating Flashcards...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-5 w-5" />
+                Generate Flashcards
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl p-8 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Flashcards</h2>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">
-            {currentIndex + 1} / {flashcards.length}
-          </span>
-          <button
-            onClick={generateFlashcards}
-            disabled={generating}
-            className="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
-          >
-            {generating ? 'Regenerating...' : '🔄 Regenerate'}
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center">
-        <div
-          className="w-full max-w-2xl h-80 perspective-1000 cursor-pointer mb-6"
-          onClick={() => setIsFlipped(!isFlipped)}
-        >
-          <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-            {/* Front - Question */}
-            <div className={`absolute w-full h-full bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded-2xl flex items-center justify-center p-8 backface-hidden shadow-lg ${isFlipped ? 'invisible' : 'visible'}`}>
-              <div className="text-center">
-                <div className="text-sm font-semibold text-blue-600 mb-4">QUESTION</div>
-                <p className="text-2xl font-medium text-gray-900">{flashcards[currentIndex].question}</p>
-                <div className="mt-6 text-sm text-gray-500">Click to reveal answer</div>
-              </div>
-            </div>
-
-            {/* Back - Answer */}
-            <div className={`absolute w-full h-full bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-300 rounded-2xl flex items-center justify-center p-8 backface-hidden rotate-y-180 shadow-lg ${isFlipped ? 'visible' : 'invisible'}`}>
-              <div className="text-center">
-                <div className="text-sm font-semibold text-green-600 mb-4">ANSWER</div>
-                <p className="text-xl font-medium text-gray-900">{flashcards[currentIndex].answer}</p>
-                <div className="mt-6 text-sm text-gray-500">Click to see question</div>
-              </div>
-            </div>
+    <Card className="border-2">
+      <CardContent className="p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Flashcards</h2>
+            <p className="text-sm text-muted-foreground">Click card to flip</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="text-sm">
+              {currentIndex + 1} / {flashcards.length}
+            </Badge>
+            <Button
+              onClick={generateFlashcards}
+              disabled={generating}
+              variant="outline"
+              size="sm"
+            >
+              {generating ? (
+                <>
+                  <RotateCw className="mr-2 h-4 w-4 animate-spin" />
+                  Regenerating...
+                </>
+              ) : (
+                <>
+                  <RotateCw className="mr-2 h-4 w-4" />
+                  Regenerate
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <button
-            onClick={handlePrevious}
-            disabled={flashcards.length <= 1}
-            className="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 text-gray-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            ← Previous
-          </button>
-          <button
+        {/* Flashcard */}
+        <div className="flex flex-col items-center">
+          <div
+            className="w-full max-w-2xl h-80 perspective-1000 cursor-pointer mb-6"
             onClick={() => setIsFlipped(!isFlipped)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors"
           >
-            {isFlipped ? '🔄 Show Question' : '🔄 Show Answer'}
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={flashcards.length <= 1}
-            className="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 text-gray-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Next →
-          </button>
-        </div>
-      </div>
+            <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+              {/* Front - Question */}
+              <Card className={`absolute w-full h-full bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-primary/20 backface-hidden shadow-xl hover:shadow-2xl transition-shadow ${isFlipped ? 'invisible' : 'visible'}`}>
+                <CardContent className="flex items-center justify-center h-full p-8">
+                  <div className="text-center">
+                    <Badge className="mb-4 bg-blue-600">QUESTION</Badge>
+                    <p className="text-2xl font-semibold text-foreground leading-relaxed">
+                      {flashcards[currentIndex].question}
+                    </p>
+                    <p className="mt-6 text-sm text-muted-foreground">Click to reveal answer</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-      <style jsx>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        .backface-hidden {
-          backface-visibility: hidden;
-        }
-        .rotate-y-180 {
-          transform: rotateY(180deg);
-        }
-      `}</style>
-    </div>
+              {/* Back - Answer */}
+              <Card className={`absolute w-full h-full bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-500/20 backface-hidden shadow-xl hover:shadow-2xl transition-shadow ${isFlipped ? 'visible' : 'invisible'}`} style={{ transform: 'rotateY(180deg)' }}>
+                <CardContent className="flex items-center justify-center h-full p-8">
+                  <div className="text-center">
+                    <Badge className="mb-4 bg-green-600">ANSWER</Badge>
+                    <p className="text-xl font-medium text-foreground leading-relaxed">
+                      {flashcards[currentIndex].answer}
+                    </p>
+                    <p className="mt-6 text-sm text-muted-foreground">Click to see question</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex gap-3">
+            <Button
+              onClick={handlePrevious}
+              disabled={flashcards.length <= 1}
+              variant="outline"
+              size="lg"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              onClick={() => setIsFlipped(!isFlipped)}
+              size="lg"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              <RotateCw className="mr-2 h-4 w-4" />
+              {isFlipped ? 'Show Question' : 'Show Answer'}
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={flashcards.length <= 1}
+              variant="outline"
+              size="lg"
+            >
+              Next
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <style jsx>{`
+          .perspective-1000 {
+            perspective: 1000px;
+          }
+          .transform-style-3d {
+            transform-style: preserve-3d;
+          }
+          .backface-hidden {
+            backface-visibility: hidden;
+          }
+          .rotate-y-180 {
+            transform: rotateY(180deg);
+          }
+        `}</style>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import UploadModal from './UploadModal'
+import UploadModal from './UploadModal';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Plus, Trash2, FileText, Calendar } from "lucide-react";
 
 type Session = {
     id: number;
@@ -20,6 +27,7 @@ export default function SessionList({ onSelectSession, userName }: {
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [deleteSession, setDeleteSession] = useState<Session | null>(null);
 
     useEffect(() => {
         fetchSessions();
@@ -56,22 +64,17 @@ export default function SessionList({ onSelectSession, userName }: {
         }
     };
 
-    const handleDeleteSession = async (sessionId: number, sessionName: string) => {
-        // Confirm deletion
-        const confirmed = window.confirm(
-            `Are you sure you want to delete "${sessionName}"?\n\nThis will permanently delete the session and all its documents. This action cannot be undone.`
-        );
-
-        if (!confirmed) return;
+    const handleDeleteSession = async () => {
+        if (!deleteSession) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/api/sessions/${sessionId}`, {
+            const response = await fetch(`http://localhost:8000/api/sessions/${deleteSession.id}`, {
                 method: 'DELETE',
             });
 
             if (response.ok) {
-                // Refresh the sessions list
                 fetchSessions();
+                setDeleteSession(null);
             } else {
                 throw new Error('Failed to delete session');
             }
@@ -80,7 +83,6 @@ export default function SessionList({ onSelectSession, userName }: {
             alert('Failed to delete session. Please try again.');
         }
     };
-
 
     const filteredSessions = sessions.filter(session =>
         session.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -93,12 +95,12 @@ export default function SessionList({ onSelectSession, userName }: {
 
     const getSessionColor = (index: number) => {
         const colors = [
-            'bg-blue-100 text-blue-700',
-            'bg-green-100 text-green-700',
-            'bg-purple-100 text-purple-700',
-            'bg-pink-100 text-pink-700',
-            'bg-yellow-100 text-yellow-700',
-            'bg-cyan-100 text-cyan-700',
+            'from-blue-500 to-cyan-500',
+            'from-green-500 to-emerald-500',
+            'from-purple-500 to-pink-500',
+            'from-orange-500 to-red-500',
+            'from-yellow-500 to-amber-500',
+            'from-indigo-500 to-blue-500',
         ];
         return colors[index % colors.length];
     };
@@ -107,96 +109,127 @@ export default function SessionList({ onSelectSession, userName }: {
         <>
             <div className="space-y-6">
                 {/* Welcome Section */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-3xl font-bold text-gray-900">Hello, {userName}!</h2>
-                        <p className="text-gray-600 mt-1">Ready to study smarter?</p>
+                        <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            Hello, {userName}! 👋
+                        </h2>
+                        <p className="text-muted-foreground mt-2">Ready to study smarter with AI?</p>
                     </div>
-                    <button
+                    <Button
                         onClick={() => setShowUploadModal(true)}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+                        size="lg"
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
                     >
-                        <span className="text-xl">+</span>
+                        <Plus className="mr-2 h-5 w-5" />
                         New Session
-                    </button>
+                    </Button>
                 </div>
 
-                {/* Search and Filter */}
-                <div className="flex items-center gap-4">
-                    <div className="flex-1 relative">
-                        <input
-                            type="text"
-                            placeholder="Search sessions..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full px-4 py-3 pl-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                        />
-                        <span className="absolute left-3 top-3.5 text-gray-400">🔍</span>
-                    </div>
+                {/* Search */}
+                <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Search sessions..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                    />
                 </div>
 
                 {/* Sessions List */}
                 {loading ? (
-                    <div className="text-center py-12">
-                        <div className="text-4xl mb-4">⏳</div>
-                        <p className="text-gray-600">Loading sessions...</p>
+                    <div className="space-y-3">
+                        {[1, 2, 3].map((i) => (
+                            <Card key={i}>
+                                <CardContent className="p-6">
+                                    <div className="flex items-center gap-4">
+                                        <Skeleton className="h-14 w-14 rounded-lg" />
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-5 w-48" />
+                                            <Skeleton className="h-4 w-32" />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
                 ) : filteredSessions.length > 0 ? (
-                    <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-                            Your Sessions ({filteredSessions.length})
-                        </h3>
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                                Your Sessions
+                            </h3>
+                            <Badge variant="secondary">{filteredSessions.length}</Badge>
+                        </div>
 
-                        {filteredSessions.map((session, index) => (
-                            <div
-                                key={session.id}
-                                onClick={() => onSelectSession(session)}
-                                className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer group"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 ${getSessionColor(index)} rounded-lg flex items-center justify-center text-2xl`}>
-                                            {getSessionIcon(index)}
-                                        </div>
-                                        <div>
-                                            <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                {session.name}
-                                            </h4>
-                                            <p className="text-sm text-gray-500">
-                                                {session.document_count} document{session.document_count !== 1 ? 's' : ''}
-                                            </p>
-                                        </div>
-                                    </div>
+                        <div className="grid gap-4">
+                            {filteredSessions.map((session, index) => (
+                                <Card
+                                    key={session.id}
+                                    className="group hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50"
+                                    onClick={() => onSelectSession(session)}
+                                >
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4 flex-1">
+                                                <div className={`w-14 h-14 bg-gradient-to-br ${getSessionColor(index)} rounded-xl flex items-center justify-center text-3xl shadow-md`}>
+                                                    {getSessionIcon(index)}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                                                        {session.name}
+                                                    </h4>
+                                                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                                                        <div className="flex items-center gap-1">
+                                                            <FileText className="h-3 w-3" />
+                                                            <span>{session.document_count} document{session.document_count !== 1 ? 's' : ''}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" />
+                                                            <span>{new Date(session.updated_at).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                    <div className="flex items-center gap-6 text-sm text-gray-500">
-                                        <span>{new Date(session.updated_at).toLocaleDateString()}</span>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteSession(session.id, session.name);
-                                            }}
-                                            className="text-gray-400 hover:text-red-600"
-                                        >
-                                            🗑️
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteSession(session);
+                                                }}
+                                                className="text-muted-foreground hover:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                     </div>
                 ) : (
                     /* Empty State */
-                    <div className="text-center py-16">
-                        <div className="text-6xl mb-4">📚</div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No sessions yet</h3>
-                        <p className="text-gray-600 mb-6">Create your first study session to get started!</p>
-                        <button
-                            onClick={() => setShowUploadModal(true)}
-                            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700"
-                        >
-                            Create New Session
-                        </button>
-                    </div>
+                    <Card className="border-dashed border-2">
+                        <CardContent className="flex flex-col items-center justify-center py-16">
+                            <div className="text-6xl mb-4">📚</div>
+                            <CardTitle className="mb-2">No sessions yet</CardTitle>
+                            <CardDescription className="mb-6 text-center">
+                                Create your first study session to get started with AI-powered learning!
+                            </CardDescription>
+                            <Button
+                                onClick={() => setShowUploadModal(true)}
+                                size="lg"
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                            >
+                                <Plus className="mr-2 h-5 w-5" />
+                                Create New Session
+                            </Button>
+                        </CardContent>
+                    </Card>
                 )}
             </div>
 
@@ -206,8 +239,7 @@ export default function SessionList({ onSelectSession, userName }: {
                     onClose={() => setShowUploadModal(false)}
                     onUploadComplete={(sessionId: number) => {
                         setShowUploadModal(false);
-                        fetchSessions(); // Refresh the list
-                        // Fetch the session details and pass the full object
+                        fetchSessions();
                         const newSession = sessions.find(s => s.id === sessionId);
                         if (newSession) {
                             onSelectSession(newSession);
@@ -216,6 +248,28 @@ export default function SessionList({ onSelectSession, userName }: {
                     onCreateSession={handleCreateSession}
                 />
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={!!deleteSession} onOpenChange={() => setDeleteSession(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete <strong>{deleteSession?.name}</strong> and all its documents.
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteSession}
+                            className="bg-destructive hover:bg-destructive/90"
+                        >
+                            Delete Session
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

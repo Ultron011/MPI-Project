@@ -2,6 +2,12 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Upload, FileText, X, CheckCircle2, Loader2 } from "lucide-react";
 
 export default function UploadModal({ onClose, onUploadComplete, onCreateSession }: {
     onClose: () => void;
@@ -35,14 +41,12 @@ export default function UploadModal({ onClose, onUploadComplete, onCreateSession
         setUploading(true);
 
         try {
-            // 1. Create session first
             const sessionId = await onCreateSession(sessionName);
 
             if (!sessionId) {
                 throw new Error('Failed to create session');
             }
 
-            // 2. Upload files to the session
             for (const file of uploadedFiles) {
                 const formData = new FormData();
                 formData.append('file', file);
@@ -56,13 +60,12 @@ export default function UploadModal({ onClose, onUploadComplete, onCreateSession
             setUploading(false);
             setUploadComplete(true);
 
-            // Auto-redirect after 1 second
             setTimeout(() => {
                 if (onUploadComplete) {
                     onUploadComplete(sessionId);
                 }
                 onClose();
-            }, 1000);
+            }, 1500);
         } catch (error) {
             console.error('Upload failed:', error);
             setUploading(false);
@@ -75,138 +78,150 @@ export default function UploadModal({ onClose, onUploadComplete, onCreateSession
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-                {/* Header */}
-                <div className="p-6 border-b flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                        {uploadComplete ? 'Session Created!' : step === 'name' ? 'Create New Session' : 'Upload Files'}
-                    </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
-                        ×
-                    </button>
-                </div>
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl">
+                        {uploadComplete ? '✨ Session Created!' : step === 'name' ? 'Create New Session' : 'Upload Files'}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {uploadComplete
+                            ? 'Your files have been successfully uploaded and processed.'
+                            : step === 'name'
+                                ? 'Give your study session a memorable name'
+                                : 'Upload PDF files to your session'}
+                    </DialogDescription>
+                </DialogHeader>
 
-                {/* Content */}
-                <div className="p-6 space-y-6">
-                    {!uploadComplete ? (
-                        <>
-                            {step === 'name' ? (
-                                /* Step 1: Name the Session */
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Session Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={sessionName}
-                                            onChange={(e) => setSessionName(e.target.value)}
-                                            placeholder="e.g., Biology 101, Math Finals, History Notes..."
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            autoFocus
-                                        />
-                                    </div>
+                {!uploadComplete ? (
+                    <div className="space-y-6">
+                        {step === 'name' ? (
+                            /* Step 1: Name the Session */
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="session-name">Session Name</Label>
+                                    <Input
+                                        id="session-name"
+                                        value={sessionName}
+                                        onChange={(e) => setSessionName(e.target.value)}
+                                        placeholder="e.g., Biology 101, Math Finals, History Notes..."
+                                        autoFocus
+                                    />
+                                </div>
 
-                                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                <Card className="bg-blue-50 border-blue-200">
+                                    <CardContent className="pt-4">
                                         <p className="text-sm text-blue-800">
                                             💡 <strong>Tip:</strong> Give your session a descriptive name so you can easily find it later!
                                         </p>
-                                    </div>
+                                    </CardContent>
+                                </Card>
 
-                                    <button
-                                        onClick={handleNext}
-                                        disabled={!sessionName.trim()}
-                                        className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Continue to Upload
-                                    </button>
-                                </div>
-                            ) : (
-                                /* Step 2: Upload Files */
-                                <>
-                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                                        <p className="text-sm text-gray-700">
+                                <Button
+                                    onClick={handleNext}
+                                    disabled={!sessionName.trim()}
+                                    className="w-full"
+                                    size="lg"
+                                >
+                                    Continue to Upload
+                                </Button>
+                            </div>
+                        ) : (
+                            /* Step 2: Upload Files */
+                            <div className="space-y-4">
+                                <Card className="bg-muted/50">
+                                    <CardContent className="pt-4">
+                                        <p className="text-sm">
                                             <strong>Session:</strong> {sessionName}
                                         </p>
-                                    </div>
+                                    </CardContent>
+                                </Card>
 
-                                    {/* Dropzone */}
-                                    <div
-                                        {...getRootProps()}
-                                        className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer
-                      ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-gray-50'}`}
-                                    >
-                                        <input {...getInputProps()} />
-                                        <div className="text-5xl mb-4">📄</div>
-                                        {isDragActive ? (
-                                            <p className="text-lg font-medium text-blue-600">Drop your files here...</p>
-                                        ) : (
-                                            <>
-                                                <p className="text-lg font-medium text-gray-700 mb-2">
-                                                    Drag & drop your PDF files here
-                                                </p>
-                                                <p className="text-sm text-gray-500">or click to browse</p>
-                                            </>
-                                        )}
-                                    </div>
+                                {/* Dropzone */}
+                                <div
+                                    {...getRootProps()}
+                                    className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer
+                    ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50 bg-muted/20'}`}
+                                >
+                                    <input {...getInputProps()} />
+                                    <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                    {isDragActive ? (
+                                        <p className="text-lg font-medium text-primary">Drop your files here...</p>
+                                    ) : (
+                                        <>
+                                            <p className="text-lg font-medium text-foreground mb-2">
+                                                Drag & drop your PDF files here
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">or click to browse</p>
+                                        </>
+                                    )}
+                                </div>
 
-                                    {/* Uploaded Files List */}
-                                    {uploadedFiles.length > 0 && (
-                                        <div className="space-y-2">
-                                            <h4 className="font-semibold text-gray-900">Files to upload ({uploadedFiles.length})</h4>
+                                {/* Uploaded Files List */}
+                                {uploadedFiles.length > 0 && (
+                                    <div className="space-y-2">
+                                        <Label>Files to upload ({uploadedFiles.length})</Label>
+                                        <div className="space-y-2 max-h-48 overflow-y-auto">
                                             {uploadedFiles.map((file, index) => (
-                                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="text-2xl">📄</span>
-                                                        <span className="text-sm font-medium text-gray-700">{file.name}</span>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => removeFile(index)}
-                                                        className="text-red-500 hover:text-red-700"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                </div>
+                                                <Card key={index}>
+                                                    <CardContent className="flex items-center justify-between p-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <FileText className="h-5 w-5 text-muted-foreground" />
+                                                            <span className="text-sm font-medium">{file.name}</span>
+                                                        </div>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => removeFile(index)}
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </CardContent>
+                                                </Card>
                                             ))}
                                         </div>
-                                    )}
-
-                                    {/* Upload Button */}
-                                    <div className="flex gap-3">
-                                        <button
-                                            onClick={() => setStep('name')}
-                                            className="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-700 font-medium"
-                                        >
-                                            ← Back
-                                        </button>
-                                        <button
-                                            onClick={handleUpload}
-                                            disabled={uploadedFiles.length === 0 || uploading}
-                                            className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                        >
-                                            {uploading ? '⏳ Uploading...' : `Upload ${uploadedFiles.length} file(s)`}
-                                        </button>
                                     </div>
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        /* Upload Complete State */
-                        <div className="text-center py-8">
-                            <div className="text-6xl mb-4">✅</div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Session Created!</h3>
-                            <p className="text-gray-600 mb-2">
-                                <strong>{sessionName}</strong>
-                            </p>
-                            <p className="text-gray-600 mb-6">
-                                Your files have been successfully uploaded and processed.
-                            </p>
-                            <p className="text-sm text-gray-500">Redirecting to session...</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setStep('name')}
+                                    >
+                                        ← Back
+                                    </Button>
+                                    <Button
+                                        onClick={handleUpload}
+                                        disabled={uploadedFiles.length === 0 || uploading}
+                                        className="flex-1"
+                                        size="lg"
+                                    >
+                                        {uploading ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Uploading...
+                                            </>
+                                        ) : (
+                                            `Upload ${uploadedFiles.length} file(s)`
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* Upload Complete State */
+                    <div className="text-center py-8">
+                        <CheckCircle2 className="mx-auto h-16 w-16 text-green-500 mb-4" />
+                        <h3 className="text-2xl font-bold mb-2">{sessionName}</h3>
+                        <p className="text-muted-foreground mb-6">
+                            Your files have been successfully uploaded and processed.
+                        </p>
+                        <p className="text-sm text-muted-foreground">Redirecting to session...</p>
+                    </div>
+                )}
+            </DialogContent>
+        </Dialog>
     );
 }
