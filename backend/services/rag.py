@@ -40,7 +40,7 @@ async def store_embeddings(file_name: str, chunks: List[str]):
     response = supabase.table("documents").insert(data).execute()
     return response
 
-async def query_documents(query: str, match_threshold: float = 0.5, match_count: int = 5):
+async def query_documents(query: str, match_threshold: float = 0.3, match_count: int = 5):
     """
     Searches for relevant documents using vector similarity.
     Required: A Postgres function 'match_documents' in Supabase.

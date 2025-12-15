@@ -12,7 +12,8 @@ dependencies = [
     "supabase",
     "python-multipart",
     "pypdf",
-    "python-dotenv"
+    "python-dotenv",
+    "requests>=2.32.5",
 ]
 
 [tool.setuptools]
