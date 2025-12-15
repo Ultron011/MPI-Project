@@ -1,0 +1,19 @@
+[project]
+name = "ai-study-buddy-backend"
+version = "0.1.0"
+description = "Backend for AI Study Buddy using FastAPI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "openai",
+    "supabase",
+    "python-multipart",
+    "pypdf",
+    "python-dotenv"
+]
+
+[tool.setuptools]
+packages = ["backend"]
