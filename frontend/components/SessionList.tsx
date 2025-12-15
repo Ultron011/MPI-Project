@@ -12,7 +12,10 @@ type Session = {
     document_count: number;
 };
 
-export default function SessionList({ onSelectSession, userName }: { onSelectSession: (id: number) => void, userName: string }) {
+export default function SessionList({ onSelectSession, userName }: {
+    onSelectSession: (session: Session) => void,
+    userName: string
+}) {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
@@ -52,6 +55,32 @@ export default function SessionList({ onSelectSession, userName }: { onSelectSes
             return null;
         }
     };
+
+    const handleDeleteSession = async (sessionId: number, sessionName: string) => {
+        // Confirm deletion
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${sessionName}"?\n\nThis will permanently delete the session and all its documents. This action cannot be undone.`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`http://localhost:8000/api/sessions/${sessionId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                // Refresh the sessions list
+                fetchSessions();
+            } else {
+                throw new Error('Failed to delete session');
+            }
+        } catch (error) {
+            console.error('Failed to delete session:', error);
+            alert('Failed to delete session. Please try again.');
+        }
+    };
+
 
     const filteredSessions = sessions.filter(session =>
         session.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -121,7 +150,7 @@ export default function SessionList({ onSelectSession, userName }: { onSelectSes
                         {filteredSessions.map((session, index) => (
                             <div
                                 key={session.id}
-                                onClick={() => onSelectSession(session.id)}
+                                onClick={() => onSelectSession(session)}
                                 className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer group"
                             >
                                 <div className="flex items-center justify-between">
@@ -144,7 +173,7 @@ export default function SessionList({ onSelectSession, userName }: { onSelectSes
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                // Add delete functionality here
+                                                handleDeleteSession(session.id, session.name);
                                             }}
                                             className="text-gray-400 hover:text-red-600"
                                         >
@@ -178,7 +207,11 @@ export default function SessionList({ onSelectSession, userName }: { onSelectSes
                     onUploadComplete={(sessionId: number) => {
                         setShowUploadModal(false);
                         fetchSessions(); // Refresh the list
-                        onSelectSession(sessionId);
+                        // Fetch the session details and pass the full object
+                        const newSession = sessions.find(s => s.id === sessionId);
+                        if (newSession) {
+                            onSelectSession(newSession);
+                        }
                     }}
                     onCreateSession={handleCreateSession}
                 />

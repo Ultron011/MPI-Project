@@ -1,16 +1,27 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import SessionList from "@/components/SessionList";
-import StudySession from "@/components/StudySession";
+import { slugify } from "@/lib/utils";
+
+type Session = {
+  id: number;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  document_count: number;
+};
 
 export default function Home() {
-  const [currentSession, setCurrentSession] = useState<number | null>(null);
+  const router = useRouter();
   const [userName] = useState("Student");
 
-  if (currentSession) {
-    return <StudySession sessionId={currentSession} onBack={() => setCurrentSession(null)} />;
-  }
+  const handleSelectSession = (session: Session) => {
+    const slug = slugify(session.name);
+    router.push(`/${slug}/${session.id}`);
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -37,7 +48,7 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <SessionList onSelectSession={setCurrentSession} userName={userName} />
+        <SessionList onSelectSession={handleSelectSession} userName={userName} />
       </div>
     </main>
   );
