@@ -16,7 +16,7 @@ type Message = {
     context_used?: boolean;
 };
 
-export default function ChatInterface() {
+export default function ChatInterface({ sessionId }: { sessionId?: number }) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ export default function ChatInterface() {
             const response = await fetch('http://localhost:8000/api/study/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input }),
+                body: JSON.stringify({ message: input, session_id: sessionId }),
             });
             const data = await response.json();
 
@@ -54,7 +54,7 @@ export default function ChatInterface() {
     };
 
     return (
-        <div className="flex flex-col h-[500px] border rounded-xl overflow-hidden bg-white shadow-sm">
+        <div className="flex flex-col h-full min-h-[500px]">
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                 {messages.map((msg, idx) => (
                     <div key={idx} className="space-y-2">

@@ -16,5 +16,6 @@ app.add_middleware(
 def read_root():
     return {"message": "AI Study Buddy Backend is running"}
 
-from routers import study
+from routers import study, sessions
 app.include_router(study.router, prefix="/api/study", tags=["study"])
+app.include_router(sessions.router, prefix="/api", tags=["sessions"])

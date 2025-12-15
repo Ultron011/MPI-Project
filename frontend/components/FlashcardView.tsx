@@ -7,7 +7,7 @@ type Flashcard = {
   answer: string;
 };
 
-export default function FlashcardView() {
+export default function FlashcardView({ sessionId }: { sessionId?: number }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -22,7 +22,7 @@ export default function FlashcardView() {
       const response = await fetch('http://localhost:8000/api/study/flashcards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'generate flashcards' }),
+        body: JSON.stringify({ message: 'generate flashcards', session_id: sessionId }),
       });
 
       const data = await response.json();

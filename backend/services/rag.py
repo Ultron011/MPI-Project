@@ -23,24 +23,27 @@ def get_embedding(text: str) -> List[float]:
     )
     return response.data[0].embedding
 
-async def store_embeddings(file_name: str, chunks: List[str]):
+async def store_embeddings(file_name: str, chunks: List[str], session_id: int = None):
     """
     Stores text chunks and their embeddings in Supabase.
     """
     data = []
     for chunk in chunks:
         embedding = get_embedding(chunk)
-        data.append({
+        doc_data = {
             "content": chunk,
             "metadata": {"file_name": file_name},
             "embedding": embedding
-        })
+        }
+        if session_id is not None:
+            doc_data["session_id"] = session_id
+        data.append(doc_data)
     
     # Assuming 'documents' table exists with vector column
     response = supabase.table("documents").insert(data).execute()
     return response
 
-async def query_documents(query: str, match_threshold: float = 0.3, match_count: int = 5):
+async def query_documents(query: str, match_threshold: float = 0.3, match_count: int = 5, session_id: int = None):
     """
     Searches for relevant documents using vector similarity.
     Required: A Postgres function 'match_documents' in Supabase.
@@ -51,7 +54,8 @@ async def query_documents(query: str, match_threshold: float = 0.3, match_count:
     params = {
         "query_embedding": embedding,
         "match_threshold": match_threshold,
-        "match_count": match_count
+        "match_count": match_count,
+        "filter_session_id": session_id
     }
     response = supabase.rpc("match_documents", params).execute()
     return response.data

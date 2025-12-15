@@ -1,28 +1,30 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from pydantic import BaseModel
 from services.ingestion import process_pdf, chunk_text
 from services.rag import store_embeddings, query_documents, openai_client
+from typing import Optional
 
 router = APIRouter()
 
 class ChatRequest(BaseModel):
     message: str
+    session_id: Optional[int] = None
 
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), session_id: int = Query(..., description="Session ID to upload to")):
     if file.filename.endswith(".pdf"):
         text = await process_pdf(file)
         chunks = chunk_text(text)
-        # Store in DB
-        await store_embeddings(file.filename, chunks)
-        return {"filename": file.filename, "chunks_processed": len(chunks), "status": "success"}
+        # Store in DB with session_id
+        await store_embeddings(file.filename, chunks, session_id=session_id)
+        return {"filename": file.filename, "chunks_processed": len(chunks), "status": "success", "session_id": session_id}
     else:
         raise HTTPException(status_code=400, detail="Only PDF files are supported currently.")
 
 @router.post("/chat")
 async def chat(request: ChatRequest):
-    # Context retrieval
-    relevant_docs = await query_documents(request.message)
+    # Context retrieval with session filtering
+    relevant_docs = await query_documents(request.message, session_id=request.session_id)
     
     # Check if we found any relevant documents
     if not relevant_docs or len(relevant_docs) == 0:
@@ -76,14 +78,22 @@ Remember: Your job is to help students understand THEIR materials, not to provid
 @router.post("/summary")
 async def summarize(request: ChatRequest):
     """
-    Summarize the provided text or the last uploaded document context.
-    For MVP, we'll just summarize the input message if it's long, or mock it.
+    Summarize documents from the session.
     """
+    # Get documents from the session
+    relevant_docs = await query_documents("summarize all content", match_threshold=0.2, match_count=10, session_id=request.session_id)
+    
+    if not relevant_docs or len(relevant_docs) == 0:
+        return {"summary": "No documents found in this session. Please upload documents first."}
+    
+    # Build context from documents
+    context = "\n\n".join([doc['content'] for doc in relevant_docs])
+    
     response = openai_client.chat.completions.create(
-        model="gpt-5-mini",
+        model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "Summarize the following text efficiently."},
-            {"role": "user", "content": request.message}
+            {"role": "system", "content": "You are a helpful assistant. Create a comprehensive summary of the provided content. Focus on key points, main ideas, and important details."},
+            {"role": "user", "content": f"Please summarize the following content:\n\n{context[:4000]}"}
         ]
     )
     return {"summary": response.choices[0].message.content}
@@ -91,11 +101,11 @@ async def summarize(request: ChatRequest):
 @router.post("/flashcards")
 async def generate_flashcards(request: ChatRequest):
     """
-    Generate flashcards from uploaded documents.
+    Generate flashcards from uploaded documents in the session.
     Returns a list of question-answer pairs.
     """
-    # Get context from documents
-    relevant_docs = await query_documents("generate flashcards from all content", match_threshold=0.2, match_count=10)
+    # Get context from documents in this session
+    relevant_docs = await query_documents("generate flashcards from all content", match_threshold=0.2, match_count=10, session_id=request.session_id)
     
     if not relevant_docs or len(relevant_docs) == 0:
         return {
